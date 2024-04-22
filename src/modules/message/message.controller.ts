@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard())
 @Controller('message')
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}
@@ -15,7 +17,7 @@ export class MessageController {
 
   @Get()
   findAll(@Param('chatId') chatId:string) {
-    return this.messageService.findAll();
+    return this.messageService.findAll(chatId);
   }
 
 

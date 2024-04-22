@@ -8,6 +8,7 @@ export class CreateMessageDto {
     content:string;
 
 
-
-    chat:Chat;
+    @IsString()
+    @IsNotEmpty()
+    chatId:string;
 }

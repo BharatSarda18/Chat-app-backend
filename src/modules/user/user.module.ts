@@ -25,6 +25,6 @@ import { ENV } from 'src/envSchema';
   ],
   controllers: [UserController],
   providers: [UserService, JwtStrategy],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule,UserModule],
 })
 export class UserModule {}

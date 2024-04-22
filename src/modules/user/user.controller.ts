@@ -2,7 +2,6 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuard
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import * as bcrypt from "bcryptjs";
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('user')
@@ -11,15 +10,13 @@ export class UserController {
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = { name: createUserDto.name, email: createUserDto.email, password: createUserDto.password };
-    return await this.userService.create(user);
+    return await this.userService.create(createUserDto);
   }
 
   @UseGuards(AuthGuard())
   @Get()
   findAll(@Query('search') search: string, @Req() req) {
-    const id=req.user._id;
+    const id=req?.user?._id;
     return this.userService.findAll(search, id);
   }
 

@@ -1,26 +1,156 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+import { AccessChatDto } from './dto/access-chat.dto';
+import { GroupChatDto } from './dto/group-chat.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Chat } from './entities/chat.entity';
+import { Model } from 'mongoose';
+import { User } from '../user/entities/user.entity';
+import { RenameChatDto } from './dto/rename-chat.dto';
+import { RemoveGroupDto } from './dto/remove-group.dto';
 
 @Injectable()
 export class ChatService {
-  create(createChatDto: CreateChatDto) {
-    return 'This action adds a new chat';
+  constructor(@InjectModel(Chat.name) private ChatModel = Model<Chat>, @InjectModel(User.name) private UserModel = Model<User>) { }
+
+
+  async accessChatService(accessChatDto: AccessChatDto, user: string) {
+    let isChat = await this.ChatModel.find({
+      isGroupChat: false,
+      $and: [
+        { users: { $elemMatch: { $eq: user } } },
+        { users: { $elemMatch: { $eq: accessChatDto.userId } } },
+      ],
+    }).populate("users", "-password").populate("latestMessage");
+
+    isChat = await this.UserModel.populate(isChat, {
+      path: "latestMessage.sender",
+      select: "name pic email",
+    });
+
+    if (isChat.length > 0) {
+      return isChat[0];
+    } else {
+      const chatData = {
+        chatName: "sender",
+        isGroupChat: false,
+        users: [user, accessChatDto.userId],
+      }
+
+      try {
+
+        const createdChat = await this.ChatModel.create(chatData);
+        const fullChat = await this.ChatModel.findOne({ _id: createdChat._id }).populate(
+          "users",
+          "-password"
+        );
+        return fullChat;
+
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    }
+
   }
 
-  findAll() {
-    return `This action returns all chat`;
+
+  async fetchChatsService(user: string) {
+
+    try {
+      const results = await this.ChatModel.find({ users: { $eleMatch: { $eq: user } } })
+        .populate("users", "-password")
+        .populate("groupAdmin", "-password")
+        .populate("latestMessage")
+        .sort({ updatedAt: -1 });
+
+      const populatedResults = await this.UserModel.populate(results, {
+        path: "latestMessage.sender",
+        select: "name pic email",
+      });
+
+      return populatedResults;
+
+    } catch (error) {
+      throw new Error(error?.message);
+    }
+
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} chat`;
+  async groupChatsService(user: string, groupChatDto: GroupChatDto) {
+    if (groupChatDto.users.length < 2) {
+      throw new Error("More than 2 users are required to form a group chat")
+    }
+    let users = groupChatDto.users;
+    users.push(user);
+    try {
+      const groupChat = await this.ChatModel.create({
+        chatName: groupChatDto.name,
+        users: users,
+        isGroupChat: true,
+        groupAdmin: user,
+      })
+      const fullGroupChat = await this.ChatModel.findOne({ _id: groupChat._id })
+        .populate("users", "-password")
+        .populate("groupAdmin", "-password");
+
+      return fullGroupChat;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+
   }
 
-  update(id: number, updateChatDto: UpdateChatDto) {
-    return `This action updates a #${id} chat`;
+  async renameChatService(user: string, renameChatDto: RenameChatDto) {
+
+    const updatedChat = await this.ChatModel.findByIdAndUpdate(renameChatDto.chatId, {
+      chatName: renameChatDto.chatName
+    }, { new: true }).populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!updatedChat) {
+      throw new Error("Chat Not Found");
+    }
+    return updatedChat;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} chat`;
+  async removeFromGroupService(user: string, removeGroupDto: RemoveGroupDto) {
+
+    const removed = await this.ChatModel.findByIdAndUpdate(
+      removeGroupDto.chatId,
+      {
+        $pull: { users: removeGroupDto.userId },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!removed) {
+      throw new Error("Chat Not Found");
+    }
+    return removed;
   }
+
+  async AddinGroupService(user: string, removeGroupDto: RemoveGroupDto) {
+    const added = await this.ChatModel.findByIdAndUpdate(
+      removeGroupDto.chatId,
+      {
+        $push: { users: removeGroupDto.userId },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!added) {
+      throw new Error("Chat Not Found");
+    }
+    return added;
+  }
+
+
+
 }
