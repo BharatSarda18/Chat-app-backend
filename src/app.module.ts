@@ -8,26 +8,33 @@ import { MongooseError } from 'mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ENV, validationSchema } from './envSchema';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptor } from './interceptor/response/response.interceptor';
 
 const envFilePath = `${process.cwd()}/env/.env.${process.env.NODE_ENV}`;
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal:true,
+      isGlobal: true,
       envFilePath,
       validationSchema
     }),
     MongooseModule.forRootAsync({
-      imports:[ConfigModule],
-      useFactory:async(configService:ConfigService)=>({
-        uri:configService.get(ENV.MONGOURI)
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get(ENV.MONGOURI)
       }),
-      inject:[ConfigService]
-      
+      inject: [ConfigService]
+
     }),
     ChatModule, MessageModule, UserModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule { }
