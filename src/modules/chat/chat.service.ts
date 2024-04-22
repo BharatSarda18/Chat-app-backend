@@ -7,10 +7,13 @@ import { Model } from 'mongoose';
 import { User } from '../user/entities/user.entity';
 import { RenameChatDto } from './dto/rename-chat.dto';
 import { RemoveGroupDto } from './dto/remove-group.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class ChatService {
-  constructor(@InjectModel(Chat.name) private ChatModel = Model<Chat>, @InjectModel(User.name) private UserModel = Model<User>) { }
+  constructor(@InjectModel(Chat.name) private ChatModel = Model<Chat>,
+   @InjectModel(User.name) private UserModel = Model<User>,
+   private userService:UserService) { }
 
 
   async accessChatService(accessChatDto: AccessChatDto, user: string) {
@@ -20,26 +23,37 @@ export class ChatService {
         { users: { $elemMatch: { $eq: user } } },
         { users: { $elemMatch: { $eq: accessChatDto.userId } } },
       ],
-    }).populate("users", "-password").populate("latestMessage");
+    })
+     .populate("users", "-password").populate("latestMessage");
+
 
     isChat = await this.UserModel.populate(isChat, {
       path: "latestMessage.sender",
       select: "name pic email",
     });
 
+    
     if (isChat.length > 0) {
       return isChat[0];
     } else {
-      const chatData = {
+
+      const loginUser= await this.userService.findByIdWithoutDeletePass(user);
+      const otherUser = await this.userService.findByIdWithoutDeletePass(accessChatDto.userId);
+
+      const chatData=await new this.ChatModel({
         chatName: "sender",
         isGroupChat: false,
-        users: [user, accessChatDto.userId],
-      }
-
+        users: [loginUser,otherUser ],
+        latestMessage: null, 
+        groupAdmin: loginUser
+      })
+  
       try {
 
         const createdChat = await this.ChatModel.create(chatData);
-        const fullChat = await this.ChatModel.findOne({ _id: createdChat._id }).populate(
+        console.log("ischat",createdChat,chatData);
+        const fullChat = await this.ChatModel.findOne({ _id: createdChat._id })
+        .populate(
           "users",
           "-password"
         );
@@ -56,8 +70,8 @@ export class ChatService {
   async fetchChatsService(user: string) {
 
     try {
-      const results = await this.ChatModel.find({ users: { $eleMatch: { $eq: user } } })
-        .populate("users", "-password")
+      const results = await this.ChatModel.find({ users: { $elemMatch: { $eq: user } } })
+         .populate("users", "-password")
         .populate("groupAdmin", "-password")
         .populate("latestMessage")
         .sort({ updatedAt: -1 });
@@ -76,15 +90,24 @@ export class ChatService {
   }
 
   async groupChatsService(user: string, groupChatDto: GroupChatDto) {
-    if (groupChatDto.users.length < 2) {
-      throw new Error("More than 2 users are required to form a group chat")
-    }
+    console.log(groupChatDto,"groupChatDto");
     let users = groupChatDto.users;
-    users.push(user);
+    let UsersAsPerSchema=[];
+  
+    for (const userId of users) {
+      const outputUser = await this.userService.findByIdWithoutDeletePass(userId);
+      UsersAsPerSchema.push(outputUser);
+    }
+
+    const loginuser=await this.userService.findByIdWithoutDeletePass(user);
+    
+    UsersAsPerSchema.push(loginuser);
+
+    console.log(UsersAsPerSchema,"UsersAsPerSchema");
     try {
       const groupChat = await this.ChatModel.create({
         chatName: groupChatDto.name,
-        users: users,
+        users: UsersAsPerSchema,
         isGroupChat: true,
         groupAdmin: user,
       })
@@ -151,6 +174,8 @@ export class ChatService {
     return added;
   }
 
-
+  async findByIdWithoutDeletePass(id: string) {
+    return await this.ChatModel.findById(id);
+  }
 
 }

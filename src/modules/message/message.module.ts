@@ -6,9 +6,13 @@ import { Message,MessageSchema } from './entities/message.entity';
 import { PassportModule } from '@nestjs/passport';
 import { Chat, ChatSchema } from '../chat/entities/chat.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
+import { ChatModule } from '../chat/chat.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports:[
+    ChatModule,
+    UserModule,
     PassportModule.register({defaultStrategy:"jwt"}),
     MongooseModule.forFeature([{name:Message.name,schema:MessageSchema},
       {name:Chat.name,schema:ChatSchema},

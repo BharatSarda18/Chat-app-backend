@@ -66,4 +66,8 @@ export class UserService {
     return userObject;
   }
 
+  async findByIdWithoutDeletePass(id: string) {
+    return await this.UserModel.findById(id);
+  }
+
 }

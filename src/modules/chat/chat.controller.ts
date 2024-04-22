@@ -31,6 +31,7 @@ export class ChatController {
   @Post('/group')
   creategGroupChat(@Req() req, @Body() groupChatDto: GroupChatDto) {
     const user = req.user._id;
+   
     return this.chatService.groupChatsService(user, groupChatDto);
   }
 

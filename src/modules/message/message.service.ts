@@ -1,3 +1,4 @@
+import { UserService } from './../user/user.service';
 import { Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
@@ -6,25 +7,34 @@ import { Message } from './entities/message.entity';
 import { Model } from 'mongoose';
 import { User } from '../user/entities/user.entity';
 import { Chat } from '../chat/entities/chat.entity';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class MessageService {
   constructor(@InjectModel(Message.name) private MessageModel = Model<Message>,
     @InjectModel(User.name) private UserModel = Model<User>,
-    @InjectModel(Chat.name) private ChatModel = Model<Chat>
+    @InjectModel(Chat.name) private ChatModel = Model<Chat>,
+   private userService:UserService,
+   private chatService:ChatService
   ) { }
   async create(createMessageDto: CreateMessageDto, user: any) {
-    let newMessage = {
-      sender: user,
+    const senderUser=await this.userService.findByIdWithoutDeletePass(user);
+    const chatUser=await this.chatService.findByIdWithoutDeletePass(createMessageDto.chatId);
+    console.log(chatUser,"chatUserchatUser")
+    let newMessage =await new this.MessageModel({
+      sender: senderUser,
       content: createMessageDto.content,
-      chat: createMessageDto.chatId,
-    };
+      chat: chatUser,
+      readBy:senderUser
+    });
+
+
 
     try {
       let message = await this.MessageModel.create(newMessage);
 
-      message = await message.populate("sender", "name pic").execPopulate();
-      message = await message.populate("chat").execPopulate();
+      message = await message.populate("sender", "name pic");
+      message = await message.populate("chat");
       message = await this.UserModel.populate(message, {
         path: "chat.users",
         select: "name pic email",
