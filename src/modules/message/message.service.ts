@@ -49,9 +49,9 @@ export class MessageService {
     
   }
 
-  async findAll(chatId: string) {
+  async findAll(chat: string) {
     try {
-      const messages = await this.MessageModel.find({ chat: chatId })
+      const messages = await this.MessageModel.find({ chat: chat })
         .populate("sender", "name pic email")
         .populate("chat");
       return messages;

@@ -16,8 +16,8 @@ export class MessageController {
   }
 
   @Get()
-  findAll(@Param('chatId') chatId:string) {
-    return this.messageService.findAll(chatId);
+  findAll(@Query('chat') chat:string) {
+    return this.messageService.findAll(chat);
   }
 
 
