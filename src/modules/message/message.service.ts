@@ -20,7 +20,7 @@ export class MessageService {
   async create(createMessageDto: CreateMessageDto, user: any) {
     const senderUser=await this.userService.findByIdWithoutDeletePass(user);
     const chatUser=await this.chatService.findByIdWithoutDeletePass(createMessageDto.chatId);
-    console.log(chatUser,"chatUserchatUser")
+   
     let newMessage =await new this.MessageModel({
       sender: senderUser,
       content: createMessageDto.content,

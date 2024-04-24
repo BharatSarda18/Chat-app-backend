@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ENV, validationSchema } from './envSchema';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './interceptor/response/response.interceptor';
+import { SocketGateway } from './modules/socket.gateway';
 
 const envFilePath = `${process.cwd()}/env/.env.${process.env.NODE_ENV}`;
 
@@ -30,7 +31,7 @@ const envFilePath = `${process.cwd()}/env/.env.${process.env.NODE_ENV}`;
     }),
     ChatModule, MessageModule, UserModule],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [AppService,SocketGateway,
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
