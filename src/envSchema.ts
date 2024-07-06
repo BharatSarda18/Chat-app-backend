@@ -1,6 +1,5 @@
 import * as Joi from 'joi';
 
-
 export const validationSchema=Joi.object({
     PORT: Joi.number().default(8080),
     ALLOW_ORIGIN: Joi.string().required(),

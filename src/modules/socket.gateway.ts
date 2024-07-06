@@ -1,16 +1,16 @@
-// socket.gateway.ts
 import { ConfigService } from '@nestjs/config';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ENV } from 'src/envSchema';
 
-
-@WebSocketGateway({ cors: { origin: 'http://localhost:3000' } })
+@WebSocketGateway()
 export class SocketGateway {
-  constructor(private readonly configService: ConfigService) {
-    console.log(configService.get(ENV.ALLOW_ORIGIN),"ENV.ALLOW_ORIGIN")
-  }
   @WebSocketServer() server: Server;
+  constructor(private readonly configService: ConfigService) {
+    this.server = new Server({
+      cors: { origin: this.configService.get(ENV.ALLOW_ORIGIN)}
+    });
+  }
 
   @SubscribeMessage('setup')
   handleSetup(client: Socket, userData: any): void {
@@ -35,21 +35,19 @@ export class SocketGateway {
   }
 
   @SubscribeMessage('new message')
-  handleNewMessage(client: Socket, newMessageRecieved: any): void {
-    const chat = newMessageRecieved.data.chat;
-    const sender = newMessageRecieved.data.sender;
+  handleNewMessage(client: Socket, newMessageReceived: any): void {
+    const chat = newMessageReceived.data.chat;
+    const sender = newMessageReceived.data.sender;
 
     if (!chat || !chat.users || !sender || !sender._id) {
-        console.log('Chat, chat.users, or sender._id is undefined');
-        return;
+      console.log('Chat, chat.users, or sender._id is undefined');
+      return;
     }
 
     chat.users.forEach((user: any) => {
-      if (user._id == sender._id) return;
+      if (user._id === sender._id) return;
 
-      this.server.to(user._id).emit('message recieved', newMessageRecieved);
+      this.server.to(user._id).emit('message received', newMessageReceived);
     });
   }
-
-  
 }
