@@ -1,5 +1,5 @@
 import { UserService } from './../user/user.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -50,6 +50,7 @@ export class MessageService {
   }
 
   async findAll(chat: string) {
+    //throw new UnauthorizedException();
     try {
       const messages = await this.MessageModel.find({ chat: chat })
         .populate("sender", "name pic email")

@@ -175,7 +175,11 @@ export class ChatService {
   }
 
   async findByIdWithoutDeletePass(id: string) {
-    return await this.ChatModel.findById(id);
+    return await this.ChatModel.findById(id).exec();
+  }
+
+  async deleteChat(id:string){
+   return await this.ChatModel.findByIdAndDelete(id).exec();
   }
 
 }

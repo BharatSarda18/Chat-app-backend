@@ -1,9 +1,15 @@
 // socket.gateway.ts
+import { ConfigService } from '@nestjs/config';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ENV } from 'src/envSchema';
+
 
 @WebSocketGateway({ cors: { origin: 'http://localhost:3000' } })
 export class SocketGateway {
+  constructor(private readonly configService: ConfigService) {
+    console.log(configService.get(ENV.ALLOW_ORIGIN),"ENV.ALLOW_ORIGIN")
+  }
   @WebSocketServer() server: Server;
 
   @SubscribeMessage('setup')
@@ -44,4 +50,6 @@ export class SocketGateway {
       this.server.to(user._id).emit('message recieved', newMessageRecieved);
     });
   }
+
+  
 }
