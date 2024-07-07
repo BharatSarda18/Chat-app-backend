@@ -5,14 +5,7 @@ import { ENV } from 'src/envSchema';
 
 @WebSocketGateway({
   cors: {
-    origin: (origin, callback) => {
-      const allowedOrigins = process.env.ALLOW_ORIGIN; // You can add more allowed origins here
-      if (allowedOrigins.includes(origin) || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: (origin, callback) => {callback(null, true)},
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true,
