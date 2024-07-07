@@ -1,11 +1,10 @@
-import { ConfigService } from '@nestjs/config';
+
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ENV } from 'src/envSchema';
 
 @WebSocketGateway({
   cors: {
-    origin: (origin, callback) => {callback(null, true)},
+    origin: '*',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true,
@@ -14,7 +13,6 @@ import { ENV } from 'src/envSchema';
 export class SocketGateway {
   @WebSocketServer() server: Server;
 
-  constructor(private readonly configService: ConfigService) {}
 
   @SubscribeMessage('setup')
   handleSetup(client: Socket, userData: any): void {
