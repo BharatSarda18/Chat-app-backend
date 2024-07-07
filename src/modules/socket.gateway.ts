@@ -1,5 +1,4 @@
-
-import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
@@ -10,9 +9,12 @@ import { Server, Socket } from 'socket.io';
     credentials: true,
   }
 })
-export class SocketGateway {
+export class SocketGateway implements OnGatewayInit {
   @WebSocketServer() server: Server;
 
+  afterInit(server: Server) {
+    this.server = server;
+  }
 
   @SubscribeMessage('setup')
   handleSetup(client: Socket, userData: any): void {
@@ -53,4 +55,3 @@ export class SocketGateway {
     });
   }
 }
-
