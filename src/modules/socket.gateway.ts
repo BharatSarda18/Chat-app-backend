@@ -3,14 +3,25 @@ import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/web
 import { Server, Socket } from 'socket.io';
 import { ENV } from 'src/envSchema';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: (origin, callback) => {
+      const allowedOrigins = process.env.ALLOW_ORIGIN; // You can add more allowed origins here
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+  }
+})
 export class SocketGateway {
   @WebSocketServer() server: Server;
-  constructor(private readonly configService: ConfigService) {
-    this.server = new Server({
-      cors: { origin: this.configService.get(ENV.ALLOW_ORIGIN)}
-    });
-  }
+
+  constructor(private readonly configService: ConfigService) {}
 
   @SubscribeMessage('setup')
   handleSetup(client: Socket, userData: any): void {
@@ -51,3 +62,4 @@ export class SocketGateway {
     });
   }
 }
+
